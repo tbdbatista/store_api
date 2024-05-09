@@ -10,10 +10,15 @@ router = APIRouter(tags=["products"])
 
 
 @router.post(path="/", status_code=status.HTTP_201_CREATED)
-async def post(
+async def create_product(
     body: ProductIn = Body(...), usecase: ProductUsecase = Depends()
 ) -> ProductOut:
-    return await usecase.create(body=body)
+    try:
+        return await usecase.create(body=body)
+    except BaseException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Oops! Ocorreu algo de errado na criação do produto.")
+
 
 
 @router.get(path="/{id}", status_code=status.HTTP_200_OK)
