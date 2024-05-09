@@ -37,12 +37,17 @@ async def query(usecase: ProductUsecase = Depends()) -> List[ProductOut]:
 
 
 @router.patch(path="/{id}", status_code=status.HTTP_200_OK)
-async def patch(
+async def update_product(
     id: UUID4 = Path(alias="id"),
     body: ProductUpdate = Body(...),
     usecase: ProductUsecase = Depends(),
 ) -> ProductUpdateOut:
-    return await usecase.update(id=id, body=body)
+    try:
+        return await usecase.update(id=id, body=body)
+    except NotFoundException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Desculpe, o produto que você está tentando alterar não foi encontrado was not found.")
+
 
 
 @router.delete(path="/{id}", status_code=status.HTTP_204_NO_CONTENT)
