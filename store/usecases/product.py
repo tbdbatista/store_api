@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import List
 from uuid import UUID
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
@@ -14,7 +15,7 @@ class ProductUsecase:
         self.database: AsyncIOMotorDatabase = self.client.get_database()
         self.collection = self.database.get_collection("products")
 
-    async def create(self, body: ProductIn) -> ProductOut:
+    async def create_product(self, body: ProductIn) -> ProductOut:
         product_model = ProductModel(**body.model_dump())
         await self.collection.insert_one(product_model.model_dump())
 
@@ -30,6 +31,17 @@ class ProductUsecase:
 
     async def query(self) -> List[ProductOut]:
         return [ProductOut(**item) async for item in self.collection.find()]
+    
+    async def query_products_by_price_range(self, low_price: Decimal = None, high_price: Decimal = None) -> List[ProductOut]:
+        filter_criteria = {}
+        if low_price is not None:
+            filter_criteria["price"] = {"$gte": low_price}
+        if high_price is not None:
+            filter_criteria.setdefault("price", {}).update({"$lte": high_price})
+        return [ProductOut(**item) async for item in self.collection.find(
+            filter=filter_criteria
+        )]
+
 
     async def update(self, id: UUID, body: ProductUpdate) -> ProductUpdateOut:
         result = await self.collection.find_one_and_update(

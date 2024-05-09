@@ -1,5 +1,6 @@
+from decimal import Decimal
 from typing import List
-from fastapi import APIRouter, Body, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Path, Query, status
 from pydantic import UUID4
 from store.core.exceptions import NotFoundException
 
@@ -34,6 +35,21 @@ async def get(
 @router.get(path="/", status_code=status.HTTP_200_OK)
 async def query(usecase: ProductUsecase = Depends()) -> List[ProductOut]:
     return await usecase.query()
+
+
+@router.get(path="/query_by_price_range", status_code=status.HTTP_200_OK)
+async def query_by_price_range(
+    low_price: Decimal = Query(None, description="Lower price limit"),
+    high_price: Decimal = Query(None, description="Upper price limit"),
+    usecase: ProductUsecase = Depends()
+) -> List[ProductOut]:
+    try:
+        return await usecase.query_products_by_price_range(low_price=low_price, high_price=high_price)
+    except BaseException as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Oops! Ocorreu algo de errado na consulta por faixa de preço."
+        )
+
 
 
 @router.patch(path="/{id}", status_code=status.HTTP_200_OK)
